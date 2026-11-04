@@ -9,6 +9,15 @@ updates:
     directory: "/gasandwater"
     schedule:
       interval: "daily"
+    ignore:
+      # These test packages are pinned together per Python version for HA compatibility.
+      - dependency-name: "pytest"
+      - dependency-name: "pytest-asyncio"
+      - dependency-name: "pytest-cov"
+      - dependency-name: "pytest-timeout"
+      # Major bumps can violate the Python-specific HA/Pillow compatibility pins.
+      - dependency-name: "pillow-heif"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/gasandwater/frontend-src"
