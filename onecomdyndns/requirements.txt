@@ -1,0 +1,18 @@
+# One.com DynDNS Updater Dependencies
+requests>=2.32.0
+
+# SSL/ACME Dependencies
+acme>=3.0.1
+josepy>=2.0.0
+cryptography>=50.0.0
+
+# Testing Dependencies (dev only)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+responses>=0.22.0
+
+# Optional: HA integration tests (test_config_flow.py, test_init.py)
+# Installs the full Home Assistant Core + pytest-socket; on Windows
+# pytest-socket blocks ProactorEventLoop, so install only when needed:
+#   pip install pytest-homeassistant-custom-component

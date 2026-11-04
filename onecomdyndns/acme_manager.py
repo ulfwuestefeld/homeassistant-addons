@@ -1,0 +1,710 @@
+"""
+ACME Manager Module
+
+This module handles Let's Encrypt certificate management using the ACME protocol
+with DNS-01 challenge validation through One.com.
+"""
+
+import logging
+import os
+import random
+import threading
+import time
+import traceback
+from collections.abc import Callable
+from datetime import datetime, timedelta, timezone
+from functools import wraps
+
+import josepy as jose
+import requests
+from acme import challenges, client, messages
+from acme import errors as acme_errors
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+
+from onecom_api import OneComAPI, OneComAPIError
+
+_LOGGER = logging.getLogger(__name__)
+
+# Let's Encrypt directory URLs
+LETSENCRYPT_PRODUCTION = "https://acme-v02.api.letsencrypt.org/directory"
+LETSENCRYPT_STAGING = "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+# Default paths
+DEFAULT_ACCOUNT_KEY_PATH = "/data/acme/account.key"
+DEFAULT_CERT_PATH = "/ssl/fullchain.pem"
+DEFAULT_KEY_PATH = "/ssl/privkey.pem"
+
+# Retry configuration
+MAX_RETRIES = 5
+BASE_DELAY = 2  # seconds
+MAX_DELAY = 60  # seconds
+
+# Retryable exceptions - only network-related errors that may succeed on retry.
+# requests.exceptions.RequestException covers all requests-library errors (Timeout,
+# ConnectionError, ReadTimeout, ChunkedEncodingError, etc.).
+# Built-in ConnectionError and TimeoutError cover Python-level network errors.
+# Note: OSError is intentionally excluded because it is the base class for
+# PermissionError, FileNotFoundError, etc. which are not retryable.
+RETRYABLE_EXCEPTIONS = (
+    requests.exceptions.RequestException,
+    ConnectionError,
+    TimeoutError,
+)
+
+
+def retry_with_backoff(func):
+    """Decorator that implements retry with exponential backoff.
+
+    Retries the function on network-related errors with increasing delays.
+    Uses jitter to prevent thundering herd.
+
+    If the first positional argument (``self``) exposes a ``_stop_event``
+    attribute, the delay is performed via ``Event.wait()`` so that a
+    graceful-shutdown signal interrupts the sleep immediately instead of
+    blocking for up to ``MAX_DELAY`` seconds.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        last_exception = None
+
+        # If called on an instance with _stop_event, use it for
+        # interruptible sleeping during retries.
+        stop_event = getattr(args[0], "_stop_event", None) if args else None
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                return func(*args, **kwargs)
+            except RETRYABLE_EXCEPTIONS as e:
+                last_exception = e
+
+                if attempt < MAX_RETRIES - 1:
+                    # Calculate delay with exponential backoff and jitter
+                    delay = min(BASE_DELAY * (2 ** attempt), MAX_DELAY)
+                    jitter = random.uniform(0, delay * 0.3)
+                    total_delay = delay + jitter
+
+                    _LOGGER.warning(
+                        "Network error (attempt %s/%s): %s",
+                        attempt + 1, MAX_RETRIES, type(e).__name__,
+                    )
+                    _LOGGER.info("Retrying in %.1f seconds...", total_delay)
+
+                    if stop_event is not None:
+                        if stop_event.wait(timeout=total_delay):
+                            _LOGGER.info("Shutdown requested during retry backoff")
+                            raise
+                    else:
+                        time.sleep(total_delay)
+                else:
+                    _LOGGER.error(
+                        "All %s attempts failed: %s: %s",
+                        MAX_RETRIES, type(e).__name__, e,
+                    )
+
+        # Re-raise the last exception after all retries failed
+        raise last_exception
+
+    return wrapper
+
+
+class ACMEManagerError(Exception):
+    """Exception raised for ACME Manager errors."""
+
+
+class ACMEManager:
+    """Manages Let's Encrypt certificates using ACME with DNS-01 challenge."""
+
+    def __init__(
+        self,
+        email: str,
+        onecom_api: OneComAPI,
+        staging: bool = False,
+        account_key_path: str = DEFAULT_ACCOUNT_KEY_PATH,
+        cert_path: str = DEFAULT_CERT_PATH,
+        key_path: str = DEFAULT_KEY_PATH,
+        challenge_callback: Callable[[str, str, str], None] | None = None,
+        stop_event: threading.Event | None = None,
+    ):
+        """Initialize the ACME Manager.
+
+        Args:
+            email: Email address for Let's Encrypt account
+            onecom_api: Configured OneComAPI instance
+            staging: Use staging server for testing
+            account_key_path: Path to store/load account key
+            cert_path: Path to store certificate
+            key_path: Path to store private key
+            challenge_callback: Optional callback function(domain, txt_name, txt_value)
+                               called when an ACME challenge is created
+            stop_event: Optional threading.Event for graceful shutdown signalling.
+                       If not provided, a private event is created.
+        """
+        self.email = email
+        self.onecom_api = onecom_api
+        self.staging = staging
+        self.account_key_path = account_key_path
+        self.cert_path = cert_path
+        self.key_path = key_path
+        self.challenge_callback = challenge_callback
+
+        self.directory_url = LETSENCRYPT_STAGING if staging else LETSENCRYPT_PRODUCTION
+        self._account_key: jose.JWKRSA | None = None
+        self._client: client.ClientV2 | None = None
+        self._stop_event = stop_event or threading.Event()
+        self._directories_created = False
+
+        _LOGGER.info("ACME Manager initialized (staging=%s)", staging)
+
+    def stop(self):
+        """Signal the manager to abort any in-progress challenge polling."""
+        self._stop_event.set()
+
+    def _ensure_directories(self):
+        """Ensure all necessary directories exist (runs only once)."""
+        if self._directories_created:
+            return
+        for path in [self.account_key_path, self.cert_path, self.key_path]:
+            directory = os.path.dirname(path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+        self._directories_created = True
+
+    def _generate_private_key(self, key_size: int = 2048) -> rsa.RSAPrivateKey:
+        """Generate a new RSA private key.
+
+        Args:
+            key_size: Key size in bits
+
+        Returns:
+            RSA private key object.
+        """
+        return rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=key_size,
+            backend=default_backend()
+        )
+
+    def _load_or_create_account_key(self) -> jose.JWKRSA:
+        """Load existing account key or create a new one.
+
+        Returns:
+            JOSE RSA key for ACME account.
+        """
+        self._ensure_directories()
+
+        if os.path.exists(self.account_key_path):
+            _LOGGER.debug("Loading existing account key")
+            with open(self.account_key_path, "rb") as f:
+                key_data = f.read()
+                private_key = serialization.load_pem_private_key(
+                    key_data,
+                    password=None,
+                    backend=default_backend()
+                )
+                return jose.JWKRSA(key=private_key)
+
+        _LOGGER.info("Generating new account key")
+        private_key = self._generate_private_key(4096)
+
+        # Save the key
+        key_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        with open(self.account_key_path, "wb") as f:
+            f.write(key_pem)
+
+        # Set restrictive permissions (Unix only - not supported on Windows)
+        if os.name != 'nt':
+            os.chmod(self.account_key_path, 0o600)
+
+        return jose.JWKRSA(key=private_key)
+
+    @retry_with_backoff
+    def _fetch_directory(self, net: client.ClientNetwork) -> messages.Directory:
+        """Fetch ACME directory with retry support.
+        
+        Args:
+            net: Network client
+            
+        Returns:
+            ACME directory
+        """
+        _LOGGER.debug("Fetching ACME directory...")
+        return messages.Directory.from_json(
+            net.get(self.directory_url).json()
+        )
+
+    def _get_client(self, regr: messages.RegistrationResource = None) -> client.ClientV2:
+        """Get or create ACME client.
+
+        Args:
+            regr: Optional registration resource to use for authenticated requests
+            
+        Returns:
+            Configured ACME client.
+        """
+        # Cache the account key so it isn't re-read from disk on every call.
+        if self._account_key is None:
+            self._account_key = self._load_or_create_account_key()
+
+        # Create network client with optional account
+        net = client.ClientNetwork(self._account_key, account=regr, user_agent="OneComDynDNS/1.0")
+
+        # Get directory with retry
+        directory = self._fetch_directory(net)
+
+        # Create client - ClientV2 takes (directory, net) as positional args
+        self._client = client.ClientV2(directory, net)
+        
+        # Ensure the registration is stored on the client if provided
+        if regr:
+            self._client.net.account = regr
+            _LOGGER.debug("Client configured with account URI: %s", regr.uri)
+        
+        return self._client
+
+    @retry_with_backoff
+    def _call_new_account(self, acme_client, new_reg):
+        """Call new_account with retry support."""
+        return acme_client.new_account(new_reg)
+
+    def register_account(self) -> messages.RegistrationResource:
+        """Register or retrieve existing ACME account.
+
+        Returns:
+            Registration resource.
+
+        Raises:
+            ACMEManagerError: If registration fails.
+        """
+        # Get initial client without registration
+        acme_client = self._get_client()
+
+        _LOGGER.info("Registering ACME account for %s", self.email)
+
+        try:
+            # Register or retrieve existing account
+            new_reg = messages.NewRegistration.from_data(
+                email=self.email,
+                terms_of_service_agreed=True
+            )
+            _LOGGER.debug("Calling new_account...")
+            regr = self._call_new_account(acme_client, new_reg)
+            _LOGGER.info("ACME account registered (URI: %s)", regr.uri)
+            
+        except acme_errors.ConflictError as e:
+            # Account already exists - this is expected for existing accounts
+            # The exception contains the account URI
+            account_uri = str(e.location) if hasattr(e, 'location') else (e.args[0] if e.args else None)
+            _LOGGER.info("ACME account already exists at: %s", account_uri)
+            
+            # Query the existing account to get the registration resource
+            if account_uri:
+                regr = messages.RegistrationResource(
+                    body=messages.Registration(
+                        contact=(f"mailto:{self.email}",),
+                        status="valid"
+                    ),
+                    uri=account_uri
+                )
+            else:
+                raise ACMEManagerError("Account exists but URI not found")
+                
+        except RETRYABLE_EXCEPTIONS as e:
+            # Network errors after all retries failed
+            raise ACMEManagerError(f"Network error during account registration: {e}")
+                
+        except Exception as e:  # noqa: BLE001
+            _LOGGER.error("Exception type: %s", type(e).__name__)
+            _LOGGER.error("Exception args: %s", e.args)
+            _LOGGER.error("Traceback: %s", traceback.format_exc())
+            raise ACMEManagerError(f"Failed to register ACME account: {e}")
+        
+        # Store the registration
+        self._regr = regr
+        
+        # Update the existing client's network account for Key ID signing
+        _LOGGER.debug("Updating client with registration...")
+        self._client.net.account = regr
+        _LOGGER.info("ACME client ready with account: %s", regr.uri)
+        
+        return regr
+
+    def _perform_dns_challenge(
+        self,
+        domain: str,
+        challenge_body: messages.ChallengeBody,
+        authz: messages.AuthorizationResource
+    ) -> bool:
+        """Perform DNS-01 challenge for a domain.
+
+        Args:
+            domain: The domain being validated
+            challenge_body: The complete challenge body (contains .chall with DNS01)
+            authz: Authorization resource
+
+        Returns:
+            True if challenge was successful.
+        """
+        # Use the already-configured client with registration
+        if not self._client:
+            raise ACMEManagerError("ACME client not initialized")
+
+        # Get the DNS01 challenge object from the body
+        challenge = challenge_body.chall
+        
+        # Get the validation token
+        response, validation = challenge.response_and_validation(self._account_key)
+
+        # Determine the ACME challenge subdomain
+        # For subdomains like "homeassistant.wuesti.eu", the TXT record prefix
+        # must be "_acme-challenge.homeassistant" (relative to the base domain)
+        if domain.startswith("*."):
+            # Wildcard certificate
+            base_domain = domain[2:]
+            challenge_subdomain = "_acme-challenge"
+        else:
+            # Check if domain is a subdomain of the configured base domain
+            base_domain = self.onecom_api.domain
+            if domain == base_domain:
+                # Root domain - just use _acme-challenge
+                challenge_subdomain = "_acme-challenge"
+            elif domain.endswith(f".{base_domain}"):
+                # Subdomain - prepend subdomain to _acme-challenge
+                subdomain_part = domain[:-len(f".{base_domain}")]
+                challenge_subdomain = f"_acme-challenge.{subdomain_part}"
+            else:
+                # Domain doesn't match base domain - use just _acme-challenge
+                challenge_subdomain = "_acme-challenge"
+
+        # Build the full DNS name for the TXT record
+        full_txt_name = f"{challenge_subdomain}.{self.onecom_api.domain}"
+        
+        _LOGGER.info("Setting up DNS-01 challenge for %s", domain)
+        _LOGGER.info("=== ACME DNS-01 Challenge ===")
+        _LOGGER.info("TXT Record Name: %s", full_txt_name)
+        _LOGGER.info("TXT Record Value: %s", validation)
+        _LOGGER.info("=============================")
+        _LOGGER.debug("Challenge subdomain (prefix): %s", challenge_subdomain)
+        
+        # Notify via callback (e.g., Home Assistant notification)
+        if self.challenge_callback:
+            try:
+                self.challenge_callback(domain, full_txt_name, validation)
+            except Exception:
+                _LOGGER.exception("Challenge callback failed")
+
+        record_id = None
+        try:
+            # Create TXT record
+            _LOGGER.info("Creating TXT record at One.com...")
+            record_id = self.onecom_api.create_txt_record(
+                subdomain=challenge_subdomain,
+                content=validation,
+                ttl=600  # One.com requires minimum 600 seconds
+            )
+
+            # Wait for DNS propagation
+            if not self.onecom_api.wait_for_dns_propagation(
+                subdomain=challenge_subdomain,
+                expected_content=validation,
+                timeout=180,
+                interval=10,
+                stop_event=self._stop_event,
+            ):
+                _LOGGER.warning("DNS propagation timeout, attempting validation anyway...")
+
+            # Additional wait for safety (interruptible)
+            if self._stop_event.wait(timeout=5):
+                return False  # Shutdown requested
+
+            # Answer the challenge (needs the full ChallengeBody with .url)
+            self._client.answer_challenge(challenge_body, response)
+
+            # Poll for authorization status (use timezone-aware now)
+            deadline = datetime.now(timezone.utc) + timedelta(minutes=5)
+            while datetime.now(timezone.utc) < deadline:
+                # poll() returns (updated_authz, response) tuple in acme 2.x
+                poll_result = self._client.poll(authz)
+                
+                # Handle both tuple return (new) and single value (old)
+                if isinstance(poll_result, tuple):
+                    authz = poll_result[0]
+                else:
+                    authz = poll_result
+
+                status = authz.body.status.name
+                _LOGGER.debug("Authorization status: %s", status)
+
+                if status == "valid":
+                    _LOGGER.info("Challenge successful for %s", domain)
+                    return True
+                elif status == "invalid":
+                    _LOGGER.error("Challenge failed for %s", domain)
+                    return False
+
+                if self._stop_event.wait(timeout=5):
+                    return False  # Shutdown requested
+
+            _LOGGER.error("Challenge timeout for %s", domain)
+            return False
+
+        except OneComAPIError as e:
+            _LOGGER.error("DNS operation failed: %s", e)
+            _LOGGER.error("If automatic creation fails, you can manually create the TXT record:")
+            _LOGGER.error("  Name: %s", full_txt_name)
+            _LOGGER.error("  Type: TXT")
+            _LOGGER.error("  Value: %s", validation)
+            return False
+
+        except Exception:
+            _LOGGER.exception("Challenge failed")
+            return False
+
+        finally:
+            # Cleanup: remove the challenge record
+            if record_id:
+                try:
+                    self.onecom_api.delete_txt_record(record_id)
+                except OneComAPIError as e:
+                    _LOGGER.warning("Failed to cleanup challenge record: %s", e)
+
+    def obtain_certificate(self, domains: list[str]) -> tuple[str, str]:
+        """Obtain a certificate for the specified domains.
+
+        Args:
+            domains: List of domains (first one is the primary domain)
+
+        Returns:
+            Tuple of (certificate_pem, private_key_pem).
+
+        Raises:
+            ACMEManagerError: If certificate issuance fails.
+        """
+        if not domains:
+            raise ACMEManagerError("No domains specified")
+
+        _LOGGER.debug("Getting ACME client...")
+        self._get_client()
+
+        # Ensure account is registered
+        _LOGGER.debug("Registering/retrieving ACME account...")
+        self.register_account()
+        _LOGGER.debug("ACME account ready")
+
+        _LOGGER.info("Requesting certificate for: %s", ', '.join(domains))
+
+        try:
+            # Generate CSR private key
+            csr_key = self._generate_private_key(2048)
+
+            # Create CSR
+            csr_builder = x509.CertificateSigningRequestBuilder()
+            csr_builder = csr_builder.subject_name(x509.Name([
+                x509.NameAttribute(NameOID.COMMON_NAME, domains[0])
+            ]))
+
+            # Add all domains as SANs
+            san_list = [x509.DNSName(d.lstrip("*.") if d.startswith("*.") else d) for d in domains]
+            # Add wildcard separately if present
+            for d in domains:
+                if d.startswith("*."):
+                    san_list.append(x509.DNSName(d))
+
+            csr_builder = csr_builder.add_extension(
+                x509.SubjectAlternativeName(san_list),
+                critical=False
+            )
+
+            csr = csr_builder.sign(csr_key, hashes.SHA256(), default_backend())
+
+            # Request new order using self._client (which has the registration)
+            order = self._client.new_order(csr.public_bytes(serialization.Encoding.PEM))
+
+            # Process each authorization
+            for authz in order.authorizations:
+                domain = authz.body.identifier.value
+                _LOGGER.info("Processing authorization for %s", domain)
+
+                # Find DNS-01 challenge
+                dns_challenge = None
+                for challenge in authz.body.challenges:
+                    if isinstance(challenge.chall, challenges.DNS01):
+                        dns_challenge = challenge
+                        break
+
+                if not dns_challenge:
+                    raise ACMEManagerError(f"No DNS-01 challenge available for {domain}")
+
+                # Perform the challenge (pass full ChallengeBody, not just .chall)
+                if not self._perform_dns_challenge(domain, dns_challenge, authz):
+                    raise ACMEManagerError(f"DNS-01 challenge failed for {domain}")
+
+            # Finalize the order
+            _LOGGER.info("Finalizing certificate order...")
+            order = self._client.poll_and_finalize(order)
+
+            # Get the certificate
+            cert_pem = order.fullchain_pem
+
+            # Get the private key
+            key_pem = csr_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode("utf-8")
+
+            _LOGGER.info("Certificate obtained successfully")
+            return cert_pem, key_pem
+
+        except acme_errors.Error as e:
+            raise ACMEManagerError(f"ACME error: {e}")
+        except Exception as e:  # noqa: BLE001
+            raise ACMEManagerError(f"Failed to obtain certificate: {e}")
+
+    def save_certificate(self, cert_pem: str, key_pem: str):
+        """Save certificate and key to files.
+
+        Args:
+            cert_pem: Certificate chain in PEM format
+            key_pem: Private key in PEM format
+        """
+        self._ensure_directories()
+
+        _LOGGER.info("Saving certificate to %s", self.cert_path)
+        _LOGGER.info("Saving private key to %s", self.key_path)
+
+        # Save certificate
+        try:
+            with open(self.cert_path, "w") as f:
+                f.write(cert_pem)
+            if os.name != 'nt':
+                os.chmod(self.cert_path, 0o644)
+            
+            # Verify file was written
+            cert_size = os.path.getsize(self.cert_path)
+            cert_mtime = os.path.getmtime(self.cert_path)
+            _LOGGER.info("Certificate saved: %s bytes, modified: %s", cert_size, cert_mtime)
+        except Exception as e:
+            _LOGGER.error("Failed to save certificate: %s", e)
+            raise
+
+        # Save private key
+        try:
+            with open(self.key_path, "w") as f:
+                f.write(key_pem)
+            if os.name != 'nt':
+                os.chmod(self.key_path, 0o600)
+            
+            # Verify file was written
+            key_size = os.path.getsize(self.key_path)
+            key_mtime = os.path.getmtime(self.key_path)
+            _LOGGER.info("Private key saved: %s bytes, modified: %s", key_size, key_mtime)
+        except Exception as e:
+            _LOGGER.error("Failed to save private key: %s", e)
+            raise
+        
+        _LOGGER.info("="*50)
+        _LOGGER.info("CERTIFICATE UPDATE COMPLETE")
+        _LOGGER.info("Certificate: %s", self.cert_path)
+        _LOGGER.info("Private Key: %s", self.key_path)
+        _LOGGER.info("NOTE: Restart NGINX or Home Assistant to use new certificate!")
+        _LOGGER.info("="*50)
+
+    def get_certificate_expiry(self) -> datetime | None:
+        """Get the expiry date of the current certificate.
+
+        Returns:
+            Expiry datetime or None if no certificate exists.
+        """
+        if not os.path.exists(self.cert_path):
+            return None
+
+        try:
+            with open(self.cert_path, "rb") as f:
+                cert_data = f.read()
+
+            cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+            # Use UTC-aware method to avoid deprecation warning
+            try:
+                return cert.not_valid_after_utc
+            except AttributeError:
+                return cert.not_valid_after
+
+        except (OSError, ValueError, TypeError) as e:
+            _LOGGER.warning("Failed to read certificate expiry: %s", e)
+            return None
+
+    def needs_renewal(self, days_before_expiry: int = 30) -> bool:
+        """Check if the certificate needs renewal.
+
+        Args:
+            days_before_expiry: Renew if expiring within this many days
+
+        Returns:
+            True if renewal is needed.
+        """
+        expiry = self.get_certificate_expiry()
+
+        if expiry is None:
+            _LOGGER.info("No certificate found, renewal needed")
+            return True
+
+        # Use timezone-aware comparison to match get_certificate_expiry() which
+        # returns UTC-aware datetimes from cryptography's not_valid_after_utc
+        if expiry.tzinfo is not None:
+            days_remaining = (expiry - datetime.now(timezone.utc)).days
+        else:
+            # If expiry is naive, treat it as UTC to allow safe comparisons
+            if getattr(expiry, "tzinfo", None) is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            days_remaining = (expiry - now).days
+        _LOGGER.info("Certificate expires in %s days", days_remaining)
+
+        if days_remaining <= days_before_expiry:
+            _LOGGER.info("Certificate will expire soon, renewal needed")
+            return True
+
+        return False
+
+    def obtain_and_save_certificate(self, domains: list[str]) -> bool:
+        """Obtain and save a new certificate.
+
+        Args:
+            domains: List of domains for the certificate
+
+        Returns:
+            True if successful.
+        """
+        try:
+            cert_pem, key_pem = self.obtain_certificate(domains)
+            self.save_certificate(cert_pem, key_pem)
+            return True
+        except ACMEManagerError as e:
+            _LOGGER.error("Failed to obtain certificate: %s", e)
+            return False
+
+    def renew_if_needed(self, domains: list[str], days_before_expiry: int = 30) -> bool:
+        """Renew the certificate if it's expiring soon.
+
+        Args:
+            domains: List of domains for the certificate
+            days_before_expiry: Renew if expiring within this many days
+
+        Returns:
+            True if renewal was successful or not needed.
+        """
+        if not self.needs_renewal(days_before_expiry):
+            _LOGGER.info("Certificate is still valid, no renewal needed")
+            return True
+
+        _LOGGER.info("Starting certificate renewal...")
+        return self.obtain_and_save_certificate(domains)

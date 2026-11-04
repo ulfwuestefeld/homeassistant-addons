@@ -1,0 +1,258 @@
+# One.com DynDNS Updater for Home Assistant
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml/badge.svg)](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml)
+
+A Home Assistant add-on that automatically updates DNS A records at One.com when your public IP address changes. It also supports **automatic SSL certificate generation** using Let's Encrypt.
+
+## Features
+
+### DynDNS
+- Automatic public IP detection
+- Periodic IP change monitoring
+- Support for multiple subdomains
+- Configurable update interval
+- Multiple IP detection services
+
+### SSL Certificates (Optional)
+- **Automatic SSL certificates via Let's Encrypt**
+- DNS-01 challenge for certificate validation
+- Automatic certificate renewal
+- Online certificate verification
+- Force renewal option for adding new domains
+- Staging mode for testing
+
+### Entities (Custom Integration)
+- **Sensors**: Current IP, Last Update, Last IP Update, Certificate Expiry, Last Certificate Renewal, ACME Challenge
+- **Binary Sensors**: DNS Status, Certificate Valid
+- **Buttons**: Update DNS, Check IP, Renew Certificate
+
+### General
+- Full Home Assistant UI configuration
+- German and English translations
+- Also available as **Custom Integration** with Config Flow
+- **Reauthentication flow** when credentials expire
+- **Reconfigure flow** to change domain/subdomains without removing the entry
+- **Diagnostics** support (download from HA UI, sensitive data redacted)
+- Minimum Home Assistant version: **2024.12.0**
+
+## Installation
+
+### Add Repository to Home Assistant
+
+1. Open Home Assistant
+2. Go to **Settings** → **Add-ons** → **Add-on Store**
+3. Click the three dots in the top right → **Repositories**
+4. Add this repository URL: `https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns`
+5. Click **Add** → **Close**
+
+### Install the Add-on
+
+1. Find "One.com DynDNS Updater" in the add-on store
+2. Click **Install**
+3. Configure the add-on (see below)
+4. Start the add-on
+
+## Configuration
+
+Configure the add-on through the Home Assistant UI:
+
+### Required Settings
+
+| Option | Description |
+|--------|-------------|
+| `username` | One.com account email |
+| `password` | One.com account password |
+| `domain` | Domain to update (e.g., `example.com`) |
+
+### Optional Settings
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `subdomains` | `[""]` | Subdomains to update (empty for root) |
+| `update_interval` | `5` | Check interval in minutes (1-60) |
+| `ip_service` | `ipify` | IP detection service |
+| `log_level` | `info` | Logging verbosity |
+
+### SSL Settings (Optional)
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ssl_enabled` | `false` | Enable Let's Encrypt certificates |
+| `ssl_email` | `""` | Email for Let's Encrypt account |
+| `ssl_domains` | `[]` | Domains for certificate |
+| `ssl_staging` | `false` | Use staging server for testing |
+| `ssl_renewal_days` | `30` | Days before expiry to renew |
+| `ssl_check_interval` | `12` | Hours between renewal checks |
+| `ssl_force_renewal` | `false` | Force renewal on next startup |
+
+### Example (DynDNS + SSL)
+
+```yaml
+username: your.email@one.com
+password: your-password
+domain: example.com
+subdomains:
+  - ""       # Root domain
+  - "www"    # www.example.com
+  - "home"   # home.example.com
+update_interval: 5
+ip_service: ipify
+log_level: info
+ssl_enabled: true
+ssl_email: ssl@example.com
+ssl_domains:
+  - "example.com"
+  - "www.example.com"
+  - "home.example.com"
+```
+
+## Prerequisites
+
+1. **Create DNS records first**: The add-on can only update existing A records. Create them manually in the One.com Control Panel.
+
+2. **Disable 2FA**: Two-Factor Authentication is not supported. Disable it in your One.com account settings.
+
+## Architecture
+
+The add-on and custom integration communicate through shared files:
+
+```
+┌──────────────────────────────┐       ┌──────────────────────────────────┐
+│         Add-on (run.py)      │       │  Custom Integration (HA Core)    │
+│                              │       │                                  │
+│  IP check → DNS update → SSL │  ──►  │  DataUpdateCoordinator (30 s)    │
+│                              │ state │  reads state, exposes entities   │
+│  writes state file           │ file  │                                  │
+│  reads command file          │  ◄──  │  Button press → writes command   │
+└──────────────────────────────┘ cmd   └──────────────────────────────────┘
+                                 file
+```
+
+- **State file** (`/config/.onecom_dyndns_state.json`): Add-on writes after every check cycle and SSL event; integration reads every 30 seconds.
+- **Command file** (`/config/.onecom_dyndns_commands.json`): Button presses and service calls write commands; add-on picks up within 5 seconds.
+- **Discovery**: Add-on publishes `POST /discovery` with retry logic (5 attempts, increasing delay) so the integration auto-creates at first boot.
+- **Standalone mode**: Without the add-on, the integration polls IP services directly and performs DNS updates itself.
+
+## How It Works
+
+### DynDNS Flow
+
+```
+┌─────────────────┐
+│  Start Add-on   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Get Public IP  │◄─────────────┐
+│   (ipify.org)   │              │
+└────────┬────────┘              │
+         │                       │
+         ▼                       │
+┌─────────────────┐              │
+│  IP Changed?    │──No──────────┤
+└────────┬────────┘              │
+         │ Yes                   │
+         ▼                       │
+┌─────────────────┐              │
+│ Login to One.com│              │
+└────────┬────────┘              │
+         │                       │
+         ▼                       │
+┌─────────────────┐              │
+│ Update DNS      │              │
+│ A Records       │              │
+└────────┬────────┘              │
+         │                       │
+         ▼                       │
+┌─────────────────┐              │
+│  Save New IP    │              │
+└────────┬────────┘              │
+         │                       │
+         ▼                       │
+┌─────────────────┐              │
+│ Wait Interval   │──────────────┘
+└─────────────────┘
+```
+
+### SSL Certificate Flow (when enabled)
+
+1. Checks if certificate exists and is valid
+2. If renewal needed: Creates DNS-01 challenge TXT records
+3. Let's Encrypt validates domain ownership
+4. Certificate saved to `/ssl/fullchain.pem` and `/ssl/privkey.pem`
+5. Periodic online verification of deployed certificates
+
+## Development
+
+### Run Tests
+
+```bash
+pip install -r requirements.txt
+pytest tests/ -v
+```
+
+To also run the Home Assistant integration tests (config flow, setup/unload):
+
+```bash
+pip install pytest-homeassistant-custom-component pytest-asyncio
+pytest tests/ -v
+```
+
+### Local Testing
+
+```bash
+export ONECOM_USERNAME="your@email.com"
+export ONECOM_PASSWORD="your-password"
+export ONECOM_DOMAIN="example.com"
+export ONECOM_SUBDOMAINS="www,"
+python run.py
+```
+
+## Custom Integration
+
+### Automatic (via Add-on)
+
+The add-on **automatically deploys** the custom integration into Home Assistant on every start. No manual file copying is needed:
+
+1. Install and start the add-on
+2. The integration is auto-created from the add-on configuration (no confirmation required)
+3. All entities appear on the "One.com DynDNS Updater" device
+
+### Manual (without Add-on)
+
+You can also install the integration standalone:
+
+1. Copy `custom_components/onecom_dyndns` to your HA `config/custom_components/` directory
+2. Restart Home Assistant
+3. Go to **Settings → Devices & Services → Add Integration**
+4. Search for "One.com DynDNS Updater"
+
+The integration provides sensors (Current IP, Last Update, Last IP Update, Certificate Expiry, Last Certificate Renewal, ACME Challenge), binary sensors (DNS Status, Certificate Valid), and button entities (Update DNS, Check IP, Renew Certificate). It also supports reauthentication, reconfiguration, and diagnostics download. See [DOCS.md](DOCS.md) for details.
+
+## Troubleshooting
+
+See [DOCS.md](DOCS.md) for detailed troubleshooting information.
+
+### Common Issues
+
+- **ERR_SSL_PROTOCOL_ERROR**: Check router port forwarding. Port 443 must forward to **port 443** (NGINX), not port 8123.
+- **Certificate Not Trusted**: Make sure `ssl_staging: false` is set for production certificates.
+- **No secure protocols supported**: Router is forwarding to wrong internal port.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+## Disclaimer
+
+This add-on uses web scraping to interact with One.com since they don't provide an official API. This means:
+
+- It may break if One.com changes their website
+- Use at your own risk
+- No guarantee of functionality
+
+## Contributing
+
+Contributions are welcome! Please open an issue first to discuss proposed changes.

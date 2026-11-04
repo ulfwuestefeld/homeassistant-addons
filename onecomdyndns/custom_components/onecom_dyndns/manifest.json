@@ -1,0 +1,14 @@
+{
+  "domain": "onecom_dyndns",
+  "name": "One.com DynDNS Updater",
+  "after_dependencies": ["hassio"],
+  "codeowners": ["@ulfwuestefeld"],
+  "config_flow": true,
+  "documentation": "https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns",
+  "homeassistant": "2024.12.0",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/issues",
+  "requirements": [],
+  "version": "1.5.7"
+}
