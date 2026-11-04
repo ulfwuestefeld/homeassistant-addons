@@ -31,7 +31,7 @@ RUN apk add --no-cache \
 
 # Install Python packages
 COPY requirements.txt /tmp/
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
 
 # Create working directory
 WORKDIR /app
