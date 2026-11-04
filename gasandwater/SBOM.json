@@ -1,0 +1,293 @@
+{
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.4",
+    "version": 1,
+    "metadata": {
+        "component": {
+            "type": "application",
+            "name": "gas_water_meter",
+            "version": "0.4.3",
+            "description": "Home Assistant add-on and custom integration for manual gas and water meter reading entry with OCR, projection, and cost tracking",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        }
+    },
+    "components": [
+        {
+            "type": "library",
+            "name": "pytesseract",
+            "version": ">=0.3.10",
+            "description": "Python wrapper for Google Tesseract OCR",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytesseract",
+            "scope": "optional"
+        },
+        {
+            "type": "library",
+            "name": "aiosqlite",
+            "version": ">=0.20.0",
+            "description": "Async wrapper for sqlite3 using aio",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/aiosqlite",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "name": "lit",
+            "version": "^3.2.0",
+            "description": "Simple, fast web components",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "BSD-3-Clause"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/lit",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "name": "chart.js",
+            "version": "^4.4.0",
+            "description": "Simple yet flexible JavaScript charting library",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/chart.js",
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "name": "rollup",
+            "version": "^4.59.0",
+            "description": "JavaScript bundler",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/rollup",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "@rollup/plugin-terser",
+            "version": "^1.0.0",
+            "description": "Terser minification plugin for Rollup",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/%40rollup/plugin-terser",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "pillow-heif",
+            "version": ">=0.18.0",
+            "description": "Python interface for libheif - HEIC/HEIF image support for Pillow",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "BSD-3-Clause"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pillow-heif",
+            "scope": "required"
+        },
+        {
+            "type": "application",
+            "name": "tesseract-ocr",
+            "version": ">=4.0",
+            "description": "Open Source OCR Engine",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "scope": "optional"
+        },
+        {
+            "type": "operating-system",
+            "name": "alpine-linux",
+            "description": "Alpine Linux base image (via HA add-on base)",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "name": "bashio",
+            "description": "Home Assistant add-on bash scripting helper",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "scope": "required"
+        },
+        {
+            "type": "library",
+            "name": "pytest",
+            "version": ">=8.0.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytest",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "pytest-asyncio",
+            "version": ">=0.23.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytest-asyncio",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "pytest-homeassistant-custom-component",
+            "version": ">=0.13.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytest-homeassistant-custom-component",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "pytest-cov",
+            "version": ">=6.0.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytest-cov",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "pytest-timeout",
+            "version": ">=2.3.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/pytest-timeout",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "ruff",
+            "version": ">=0.9.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/ruff",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "@web/test-runner",
+            "version": "^0.20.2",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/%40web/test-runner",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "@open-wc/testing",
+            "version": "^4.0.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/%40open-wc/testing",
+            "scope": "excluded"
+        },
+        {
+            "type": "library",
+            "name": "@web/test-runner-commands",
+            "version": "^0.9.0",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:npm/%40web/test-runner-commands",
+            "scope": "excluded"
+        }
+    ]
+}

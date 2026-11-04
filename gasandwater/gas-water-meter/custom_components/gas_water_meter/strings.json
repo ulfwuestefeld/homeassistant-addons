@@ -1,0 +1,203 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Add Meter",
+                "description": "Configure a gas or water meter for manual reading entry.",
+                "data": {
+                    "meter_type": "Meter type",
+                    "meter_name": "Meter name",
+                    "meter_number": "Meter number",
+                    "currency": "Currency"
+                },
+                "data_description": {
+                    "meter_type": "Select whether this is a gas or water meter.",
+                    "meter_name": "A descriptive name for this meter (e.g. Kitchen, Garden).",
+                    "meter_number": "The serial number printed on your physical meter.",
+                    "currency": "Currency for cost calculations."
+                }
+            },
+            "gas_params": {
+                "title": "Gas Conversion Factors",
+                "description": "Enter the calorific value and condition factor from your gas bill. These are used to convert m\u00b3 to kWh for cost calculation.",
+                "data": {
+                    "calorific_value": "Calorific value (kWh/m\u00b3)",
+                    "condition_factor": "Condition factor"
+                },
+                "data_description": {
+                    "calorific_value": "The calorific value (Brennwert) from your gas bill, typically around 11.465 kWh/m\u00b3.",
+                    "condition_factor": "The condition factor (Zustandszahl) from your gas bill, typically around 0.9684."
+                }
+            }
+        },
+        "error": {
+            "empty_meter_number": "Meter number must not be empty.",
+            "empty_meter_name": "Meter name must not be empty."
+        },
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Meter Options",
+                "data": {
+                    "meter_number": "Meter number",
+                    "currency": "Currency",
+                    "calorific_value": "Calorific value (kWh/m\u00b3)",
+                    "condition_factor": "Condition factor"
+                },
+                "data_description": {
+                    "meter_number": "Update the meter serial number (e.g. after meter replacement).",
+                    "currency": "Currency for cost calculations.",
+                    "calorific_value": "The calorific value (Brennwert) from your gas bill.",
+                    "condition_factor": "The condition factor (Zustandszahl) from your gas bill."
+                }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "reading": {
+                "name": "Meter reading"
+            },
+            "meter_number": {
+                "name": "Meter number"
+            },
+            "last_entry_date": {
+                "name": "Last entry date"
+            },
+            "consumption": {
+                "name": "Last consumption"
+            },
+            "energy_consumption": {
+                "name": "Energy consumption"
+            },
+            "energy_consumption_total": {
+                "name": "Energy consumption (meter reading)"
+            },
+            "days_between": {
+                "name": "Days between readings"
+            },
+            "daily_average": {
+                "name": "Daily average consumption"
+            },
+            "monthly_projection": {
+                "name": "Monthly projection"
+            },
+            "yearly_projection": {
+                "name": "Yearly projection"
+            },
+            "current_price": {
+                "name": "Current price"
+            },
+            "price_per_m3": {
+                "name": "Price per m³"
+            },
+            "last_period_cost": {
+                "name": "Last period cost"
+            },
+            "monthly_projected_cost": {
+                "name": "Monthly projected cost"
+            },
+            "yearly_projected_cost": {
+                "name": "Yearly projected cost"
+            },
+            "current_base_fee": {
+                "name": "Annual base fee"
+            }
+        }
+    },
+    "services": {
+        "record_reading": {
+            "name": "Record reading",
+            "description": "Record a new meter reading, optionally with a photo for OCR.",
+            "fields": {
+                "config_entry_id": {
+                    "name": "Meter",
+                    "description": "The meter to record the reading for."
+                },
+                "meter_reading": {
+                    "name": "Meter reading",
+                    "description": "The current meter reading in m\u00b3. Optional if an image is provided for OCR."
+                },
+                "meter_number": {
+                    "name": "Meter number",
+                    "description": "Override the configured meter number for this reading."
+                },
+                "timestamp": {
+                    "name": "Timestamp",
+                    "description": "Date and time of the reading. If omitted and an image is provided, the EXIF capture date from the photo is used. Otherwise defaults to now."
+                },
+                "image": {
+                    "name": "Image",
+                    "description": "File path to a photo of the meter for OCR extraction."
+                }
+            }
+        },
+        "set_price": {
+            "name": "Set price",
+            "description": "Set a new consumption price. For gas: ct/kWh, for water: EUR/m\u00b3. Historical prices are preserved.",
+            "fields": {
+                "config_entry_id": {
+                    "name": "Meter",
+                    "description": "The meter to set the price for."
+                },
+                "price_per_unit": {
+                    "name": "Price per unit",
+                    "description": "For gas: price in ct/kWh. For water: price in EUR/m\u00b3."
+                },
+                "valid_from": {
+                    "name": "Valid from",
+                    "description": "Date from which this price is effective. Defaults to today."
+                },
+                "calorific_value": {
+                    "name": "Calorific value",
+                    "description": "Gas calorific value in kWh/m\u00b3 (Brennwert). If omitted, the config entry default is used."
+                },
+                "condition_factor": {
+                    "name": "Condition factor",
+                    "description": "Gas condition factor (Zustandszahl). If omitted, the config entry default is used."
+                },
+                "base_fee": {
+                    "name": "Annual base fee",
+                    "description": "Annual base fee (Jahresgrundgebühr) in the meter's currency. Pro-rated for periods shorter than one year."
+                }
+            }
+        },
+        "read_meter_image": {
+            "name": "Read meter image",
+            "description": "Extract meter reading and number from a photo using OCR without recording.",
+            "fields": {
+                "image": {
+                    "name": "Image",
+                    "description": "File path to the meter photo."
+                }
+            }
+        }
+    },
+    "exceptions": {
+        "entry_not_found": {
+            "message": "Config entry not found."
+        },
+        "entry_not_loaded": {
+            "message": "Config entry is not loaded."
+        },
+        "image_not_found": {
+            "message": "Image file not found at the specified path."
+        },
+        "ocr_unavailable": {
+            "message": "Tesseract OCR is not available. Please install tesseract-ocr on your system."
+        },
+        "ocr_failed": {
+            "message": "Could not extract a meter reading from the image. Please provide the reading manually."
+        },
+        "reading_required": {
+            "message": "A meter reading value is required."
+        },
+        "reading_decreased": {
+            "message": "The new reading must be greater than or equal to the last reading."
+        }
+    }
+}
