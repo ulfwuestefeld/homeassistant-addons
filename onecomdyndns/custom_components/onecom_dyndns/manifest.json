@@ -4,11 +4,11 @@
   "after_dependencies": ["hassio"],
   "codeowners": ["@ulfwuestefeld"],
   "config_flow": true,
-  "documentation": "https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns",
+  "documentation": "https://github.com/ulfwuestefeld/homeassistant-addons/tree/main/onecomdyndns",
   "homeassistant": "2024.12.0",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/issues",
+  "issue_tracker": "https://github.com/ulfwuestefeld/homeassistant-addons/issues",
   "requirements": [],
   "version": "1.5.7"
 }

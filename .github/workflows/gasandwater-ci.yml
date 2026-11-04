@@ -1,4 +1,4 @@
-name: CI
+name: Gas & Water Meter CI
 
 on:
     push:
@@ -19,22 +19,29 @@ jobs:
               uses: actions/setup-python@v6
               with:
                   python-version: "3.14"
+                  cache: "pip"
+                  cache-dependency-path: gasandwater/requirements_test.txt
 
             - name: Install test requirements
+              working-directory: gasandwater
               run: |
                   python -m pip install --upgrade pip
                   pip install -r requirements_test.txt
 
             - name: Ruff format check
-              run: |
-                  python -m ruff format --check gas-water-meter/custom_components/ tests/ || true
-                  python -m ruff check gas-water-meter/custom_components/ tests/
+              working-directory: gasandwater
+              run: python -m ruff format --check gas-water-meter/custom_components/ tests/
+
+            - name: Run Ruff
+              working-directory: gasandwater
+              run: python -m ruff check gas-water-meter/custom_components/ tests/
 
             - name: Run Bandit security scan
+              working-directory: gasandwater
               run: |
                   python -m pip install bandit
                   python -m bandit -r gas-water-meter/custom_components/ -n 5
 
             - name: Run tests
-              run: |
-                  python -m pytest tests/ -q
+              working-directory: gasandwater
+              run: python -m pytest tests/ -q

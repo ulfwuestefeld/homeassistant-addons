@@ -141,7 +141,7 @@ Tests are automatically run on every push and pull request via **GitHub Actions*
 
 - **Workflow file:** `.github/workflows/test.yml`
 - **Branches:** `main`, `master`, `develop`
-- **Status badge:** [![Tests](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml/badge.svg)](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml)
+- **Status badge:** [![Tests](https://github.com/ulfwuestefeld/homeassistant-addons/actions/workflows/onecomdyndns-tests.yml/badge.svg)](https://github.com/ulfwuestefeld/homeassistant-addons/actions/workflows/onecomdyndns-tests.yml)
 
 The CI pipeline:
 1. Runs all tests with coverage reporting
@@ -306,7 +306,7 @@ Tests werden bei jedem Push und Pull Request automatisch über **GitHub Actions*
 
 - **Workflow-Datei:** `.github/workflows/test.yml`
 - **Branches:** `main`, `master`, `develop`
-- **Status-Badge:** [![Tests](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml/badge.svg)](https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns/actions/workflows/test.yml)
+- **Status-Badge:** [![Tests](https://github.com/ulfwuestefeld/homeassistant-addons/actions/workflows/onecomdyndns-tests.yml/badge.svg)](https://github.com/ulfwuestefeld/homeassistant-addons/actions/workflows/onecomdyndns-tests.yml)
 
 Die CI-Pipeline:
 1. Führt alle Tests mit Coverage-Reporting aus
@@ -341,8 +341,8 @@ pip install pytest-cov
 
 ```bash
 # Clone repository / Repository klonen
-git clone https://github.com/ulfwuestefeld/homeassistant-onecom-dyndns.git
-cd homeassistant-onecom-dyndns
+git clone https://github.com/ulfwuestefeld/homeassistant-addons.git
+cd homeassistant-addons/onecomdyndns
 
 # Create virtual environment (recommended) / Virtuelle Umgebung erstellen (empfohlen)
 python -m venv venv

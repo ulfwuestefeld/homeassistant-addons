@@ -1,4 +1,4 @@
-name: Security and Lint CI
+name: One.com DynDNS Security and Lint CI
 
 on:
   push:
@@ -16,33 +16,39 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: onecomdyndns/requirements.txt
 
       - name: Install dependencies
+        working-directory: onecomdyndns
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff bandit pip-audit safety
 
       - name: Ruff (lint)
+        working-directory: onecomdyndns
         run: ruff check .
 
       - name: Bandit (security scan)
+        working-directory: onecomdyndns
         run: bandit -r . -f json -o bandit_report.json || true
 
       - name: Pip Audit (vulnerability scan)
+        working-directory: onecomdyndns
         run: pip-audit -r requirements.txt -f json -o pip_audit.json || true
 
       - name: Safety (vulnerability DB scan)
+        working-directory: onecomdyndns
         run: |
-          # Run safety against requirements and save JSON report; non-fatal
           safety check -r requirements.txt --full-report --output json -o safety_report.json || true
 
       - name: Upload security reports
         uses: actions/upload-artifact@v6
         with:
-          name: security-reports
+          name: onecom-security-reports
           path: |
-            bandit_report.json
-            pip_audit.json
-            safety_report.json
+            onecomdyndns/bandit_report.json
+            onecomdyndns/pip_audit.json
+            onecomdyndns/safety_report.json

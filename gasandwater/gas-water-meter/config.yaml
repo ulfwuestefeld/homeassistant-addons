@@ -3,7 +3,7 @@ name: "Gas & Water Meter"
 description: "Manual gas and water meter reading entry with OCR, consumption projection, and cost tracking"
 version: "0.4.3"
 slug: "gas_water_meter"
-url: "https://github.com/ulfwuestefeld/gasandwater"
+url: "https://github.com/ulfwuestefeld/homeassistant-addons/tree/main/gasandwater"
 arch:
   - amd64
   - aarch64
