@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -327,7 +327,7 @@ class OneComDynDNSCoordinator(DataUpdateCoordinator):
         try:
             current_ip = await self._async_get_public_ip()
 
-            now_iso = datetime.now(timezone.utc).isoformat()
+            now_iso = datetime.now(UTC).isoformat()
             self._last_update = now_iso
 
             ip_changed = (
@@ -434,7 +434,7 @@ class OneComDynDNSCoordinator(DataUpdateCoordinator):
             return
         payload = {
             "command": command,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         tmp = self._command_file.with_suffix(".json.tmp")
         with open(tmp, "w") as fh:
@@ -468,7 +468,7 @@ class OneComDynDNSCoordinator(DataUpdateCoordinator):
                 return
             _LOGGER.info("Forcing certificate renewal...")
             self._last_certificate_renewal = datetime.now(
-                timezone.utc
+                UTC
             ).isoformat()
 
     # ------------------------------------------------------------------
@@ -483,7 +483,7 @@ class OneComDynDNSCoordinator(DataUpdateCoordinator):
             "domain": domain,
             "txt_name": txt_name,
             "txt_value": txt_value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def clear_acme_challenge(self) -> None:

@@ -5,6 +5,14 @@ All notable changes to the Gas & Water Meter project will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-11-04
+
+### Changed
+
+- Updated the Python runtime and test dependencies to current compatible releases.
+- Updated the frontend runtime, build, and test dependencies.
+- Refreshed the foss and sbom dependency inventories.
+
 ## [0.4.3] - 2026-10-07
 
 ### Fixed
@@ -62,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Frontend dependency remediation** — updated vulnerable transitive package paths and added security overrides to remove advisory findings from the npm dependency graph.
-- **SBOM/FOSS documentation refresh** — synchronized the dependency inventory with the current frontend toolchain and release state.
+- **sbom/foss documentation refresh** — synchronized the dependency inventory with the current frontend toolchain and release state.
 - **Release metadata consistency** — aligned version numbers across integration, add-on config, device metadata, and project docs.
 
 ### Changed

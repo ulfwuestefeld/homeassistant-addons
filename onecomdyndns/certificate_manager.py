@@ -13,7 +13,7 @@ import ssl
 import threading
 import traceback
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from cryptography import x509
@@ -175,15 +175,15 @@ class CertificateManager:
             try:
                 expiry = cert.not_valid_after_utc
                 valid_from = cert.not_valid_before_utc
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
             except AttributeError:
                 # Fallback for older cryptography versions (naive datetimes)
                 expiry = cert.not_valid_after
                 valid_from = cert.not_valid_before
                 # If expiry is naive, treat it as UTC for consistent comparisons
                 if getattr(expiry, "tzinfo", None) is None:
-                    expiry = expiry.replace(tzinfo=timezone.utc)
-                now = datetime.now(timezone.utc)
+                    expiry = expiry.replace(tzinfo=UTC)
+                now = datetime.now(UTC)
 
             days_remaining = (expiry - now).days
 
@@ -212,7 +212,7 @@ class CertificateManager:
         """
         self._ensure_directories()
 
-        status["last_updated"] = datetime.now(timezone.utc).isoformat()
+        status["last_updated"] = datetime.now(UTC).isoformat()
 
         try:
             with open(self.status_file, "w") as f:
@@ -279,7 +279,7 @@ class CertificateManager:
 
             # Obtain certificate
             if acme.obtain_and_save_certificate(self.ssl_domains):
-                self._last_renewal = datetime.now(timezone.utc)
+                self._last_renewal = datetime.now(UTC)
 
                 # Invalidate cached cert info so the next read picks up the
                 # freshly saved certificate.
@@ -337,7 +337,7 @@ class CertificateManager:
 
     def _check_and_renew(self):
         """Check certificate and renew if needed."""
-        self._last_check = datetime.now(timezone.utc)
+        self._last_check = datetime.now(UTC)
         _LOGGER.debug("Checking certificate status...")
 
         cert_info = self.get_certificate_info()

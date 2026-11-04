@@ -7,7 +7,7 @@ import importlib
 import os
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -183,8 +183,6 @@ class TestACMEManagerTimezoneHandling:
 
     def test_needs_renewal_with_timezone_aware_expiry(self):
         """Test needs_renewal handles timezone-aware expiry from cryptography."""
-        from datetime import timezone
-
         onecom_api = Mock()
         manager = ACMEManager(
             email="test@example.com",
@@ -192,14 +190,12 @@ class TestACMEManagerTimezoneHandling:
         )
 
         # Simulate a timezone-aware expiry (as returned by cryptography's not_valid_after_utc)
-        future_expiry = datetime.now(timezone.utc) + timedelta(days=60)
+        future_expiry = datetime.now(UTC) + timedelta(days=60)
         with patch.object(manager, 'get_certificate_expiry', return_value=future_expiry):
             assert manager.needs_renewal(days_before_expiry=30) is False
 
     def test_needs_renewal_with_timezone_aware_expiry_soon(self):
         """Test needs_renewal correctly detects expiring timezone-aware cert."""
-        from datetime import timezone
-
         onecom_api = Mock()
         manager = ACMEManager(
             email="test@example.com",
@@ -207,7 +203,7 @@ class TestACMEManagerTimezoneHandling:
         )
 
         # Simulate a certificate expiring in 10 days (UTC-aware)
-        soon_expiry = datetime.now(timezone.utc) + timedelta(days=10)
+        soon_expiry = datetime.now(UTC) + timedelta(days=10)
         with patch.object(manager, 'get_certificate_expiry', return_value=soon_expiry):
             assert manager.needs_renewal(days_before_expiry=30) is True
 
@@ -221,7 +217,7 @@ class TestACMEManagerTimezoneHandling:
         )
 
         # Simulate a timezone-naive expiry (as returned by older cryptography versions)
-        future_expiry = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=60)
+        future_expiry = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=60)
         with patch.object(manager, 'get_certificate_expiry', return_value=future_expiry):
             assert manager.needs_renewal(days_before_expiry=30) is False
 

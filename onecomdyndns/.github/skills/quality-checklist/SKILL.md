@@ -1,18 +1,19 @@
 ---
 name: quality-checklist
-description: Post-change quality and release checklist for this repository. Apply after every significant change and before releasing a version.
+description: One.com DynDNS Updater release and version checklist. Use before a release; for routine post-change validation use the repository-wide quality-gate skill.
 ---
 
-# Quality Checklist
+# One.com Release Checklist
 
-After each significant change, verify:
+For post-change validation after meaningful changes, use the repository-wide [quality gate](../../../../.github/skills/quality-gate/SKILL.md). This skill covers One.com-specific release and version checks.
 
-- [ ] CHANGELOG.md updated with version and changes
-- [ ] Version in config.yaml, manifest.json, sbom.json, SBOM.md matches CHANGELOG
-- [ ] Documentation (DOCS.md, README.md) is current
-- [ ] Test documentation (Test.md) is current (Python version, test count)
-- [ ] Tests pass and cover new functionality (`pytest tests/ -q`)
-- [ ] SBOM (sbom.json, SBOM.md) reflects dependencies and date
+Before releasing, verify:
+
+- [ ] CHANGELOG.md has the release entry and user-facing documentation is current
+- [ ] Version in config.yaml, manifest.json, sbom.json, and sbom.md matches CHANGELOG
+- [ ] Test documentation (Test.md) is current when Python support or test count changes
+- [ ] Relevant tests pass, including the project test suite
+- [ ] sbom.json and sbom.md reflect dependency versions and release date
 - [ ] .gitignore covers IDE and build artifacts
 
 ## Version Bump Process
@@ -22,11 +23,11 @@ When releasing a new version, update **all** of these files:
 1. `config.yaml` → `version: "X.Y.Z"`
 2. `custom_components/onecom_dyndns/manifest.json` → `"version": "X.Y.Z"`
 3. `sbom.json` → `"version": "X.Y.Z"` and `"serialNumber": "...vX.Y.Z"`
-4. `SBOM.md` → Version string, table row, dependency graph
+4. `sbom.md` → Version string, table row, dependency graph
 5. `CHANGELOG.md` → New `## [X.Y.Z] - YYYY-MM-DD` section; update "Custom component" range
 6. `Test.md` → Python version requirement if changed, test count if changed
 
-Verify with: `grep -r "old.version"` to find any missed occurrences.
+Verify version references with `rg "old.version"` to find any missed occurrences.
 
 ## Resources
 

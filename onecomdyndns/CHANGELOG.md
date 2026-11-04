@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.8] - 2026-11-04
+
+### Changed
+
+- Updated the Python runtime and OS base to the current Home Assistant base
+  image, and refreshed the Python runtime and test dependency minimums.
+- Updated the supported dependency inventory in the foss notice and sbom.
+
 ## [1.5.7] - 2026-10-07
 
 ### Fixed
@@ -50,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - **Dependencies:** Upgraded `cryptography` to `50.0.0` to address a reported
-  Bleichenbacher-style oracle vulnerability (CVE-2026-69247). See SBOM and
+  Bleichenbacher-style oracle vulnerability (CVE-2026-69247). See sbom and
   `requirements.txt` for details.
 
 ### Added
@@ -60,8 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **SBOM & FOSS:** Updated `sbom.json` and `SBOM.md` to reflect component
-  version changes and SBOM version `1.5.4`.
+- **sbom & foss:** Updated `sbom.json` and `sbom.md` to reflect component
+  version changes and sbom version `1.5.4`.
 
 ### Version
 
@@ -576,9 +584,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Error handling tests for recovery scenarios
   - ~200+ tests across 13 test files
 
-- **Software Bill of Materials (SBOM)**
+- **Software Bill of Materials (sbom)**
   - `sbom.json` in CycloneDX 1.5 format
-  - `SBOM.md` human-readable version
+  - `sbom.md` human-readable version
   - Complete dependency inventory
 
 - **Test Documentation**

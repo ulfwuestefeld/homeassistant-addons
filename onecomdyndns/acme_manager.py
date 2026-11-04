@@ -12,7 +12,7 @@ import threading
 import time
 import traceback
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 
 import josepy as jose
@@ -429,8 +429,8 @@ class ACMEManager:
             self._client.answer_challenge(challenge_body, response)
 
             # Poll for authorization status (use timezone-aware now)
-            deadline = datetime.now(timezone.utc) + timedelta(minutes=5)
-            while datetime.now(timezone.utc) < deadline:
+            deadline = datetime.now(UTC) + timedelta(minutes=5)
+            while datetime.now(UTC) < deadline:
                 # poll() returns (updated_authz, response) tuple in acme 2.x
                 poll_result = self._client.poll(authz)
                 
@@ -660,12 +660,12 @@ class ACMEManager:
         # Use timezone-aware comparison to match get_certificate_expiry() which
         # returns UTC-aware datetimes from cryptography's not_valid_after_utc
         if expiry.tzinfo is not None:
-            days_remaining = (expiry - datetime.now(timezone.utc)).days
+            days_remaining = (expiry - datetime.now(UTC)).days
         else:
             # If expiry is naive, treat it as UTC to allow safe comparisons
             if getattr(expiry, "tzinfo", None) is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            now = datetime.now(timezone.utc)
+                expiry = expiry.replace(tzinfo=UTC)
+            now = datetime.now(UTC)
             days_remaining = (expiry - now).days
         _LOGGER.info("Certificate expires in %s days", days_remaining)
 

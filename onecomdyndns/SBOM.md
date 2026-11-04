@@ -1,8 +1,8 @@
-# Software Bill of Materials (SBOM)
+# sbom (Software Bill of Materials)
 
 **Project:** One.com DynDNS Updater  
-**Version:** 1.5.7<br>
-**Date:** 2026-10-05<br>
+**Version:** 1.5.8<br>
+**Date:** 2026-11-04<br>
 **License:** MIT  
 
 ## Overview
@@ -13,7 +13,7 @@ This document provides a complete inventory of all software components used in t
 
 | Component | Version | License | Description |
 |-----------|---------|---------|-------------|
-| One.com DynDNS Updater | 1.5.7 | MIT | Main application |
+| One.com DynDNS Updater | 1.5.8 | MIT | Main application |
 
 ### Source Files
 
@@ -30,17 +30,17 @@ This document provides a complete inventory of all software components used in t
 
 | Package | Min. Version | License | Purpose |
 |---------|--------------|---------|---------|
-| requests | 2.32.0 | Apache-2.0 | HTTP client for API calls |
-| acme | 5.6.0 | Apache-2.0 | Let's Encrypt ACME protocol |
-| josepy | 2.0.0 | Apache-2.0 | JOSE/JWK cryptographic operations |
-| cryptography | 50.0.0 | Apache-2.0 / BSD-3-Clause | Cryptographic primitives |
+| requests | 2.34.2 | Apache-2.0 | HTTP client for API calls |
+| acme | 5.9.0 | Apache-2.0 | Let's Encrypt ACME protocol |
+| josepy | 2.2.0 | Apache-2.0 | JOSE/JWK cryptographic operations |
+| cryptography | 50.0.2 | Apache-2.0 / BSD-3-Clause | Cryptographic primitives |
 
 ### Python Packages (Production -- Custom Integration)
 
 | Package | Version | License | Purpose |
 |---------|---------|---------|---------|
-| acme | 5.6.0 | Apache-2.0 | Let's Encrypt ACME protocol |
-| josepy | 2.0.0 | Apache-2.0 | JOSE/JWK cryptographic operations |
+| acme | 5.9.0 | Apache-2.0 | Let's Encrypt ACME protocol |
+| josepy | 2.2.0 | Apache-2.0 | JOSE/JWK cryptographic operations |
 
 > `requests` and `cryptography` are provided by Home Assistant Core but the add-on pins/declares compatible versions for the bundled environment.
 
@@ -48,28 +48,32 @@ This document provides a complete inventory of all software components used in t
 
 | Package | Min. Version | License | Purpose |
 |---------|--------------|---------|---------|
-| pytest | >=7.0.0 | MIT | Testing framework |
-| pytest-cov | >=4.0.0 | MIT | Code coverage |
-| pytest-asyncio | >=0.21.0 | MIT | Async test support |
-| responses | >=0.22.0 | Apache-2.0 | HTTP mocking |
-| pytest-homeassistant-custom-component | latest | Apache-2.0 | HA integration test framework (optional) |
+| pytest | >=9.2.0 | MIT | Testing framework |
+| pytest-cov | >=7.1.0 | MIT | Code coverage |
+| pytest-asyncio | >=1.4.1.post1 | Apache-2.0 | Async test support |
+| responses | >=0.26.3 | Apache-2.0 | HTTP mocking |
+| pytest-homeassistant-custom-component | 0.13.375 (Python 3.14) | MIT | HA integration test framework (optional) |
+| ruff | >=0.17.3 | MIT | Linting |
+| bandit | 1.9.4 | Apache-2.0 | Security analysis |
+| pip-audit | 2.10.1 | Apache-2.0 | Dependency vulnerability audit |
+| safety | 3.8.1 | MIT | Dependency vulnerability audit |
 
 ## Container Base Image
 
 | Component | Version | License | Registry |
 |-----------|---------|---------|----------|
-| Home Assistant Base Python | 3.11-alpine3.18 | Apache-2.0 | ghcr.io/home-assistant |
+| Home Assistant Base (`amd64-base` / `aarch64-base`) | 2026.10.3 (Alpine 3.24) | Multiple; see image inventory | ghcr.io/home-assistant |
 
 ### Supported Architectures
 
 - `amd64` (x86_64)
 - `aarch64` (ARM64)
 
-## Operating System Components (Alpine Linux 3.18)
+## Operating System Components (Alpine Linux 3.24)
 
 | Package | License | Purpose |
 |---------|---------|---------|
-| python3 | PSF-2.0 | Python 3.11 runtime |
+| python3 | PSF-2.0 | Python 3 runtime from Alpine |
 | py3-pip | MIT | Python package manager |
 | py3-requests | Apache-2.0 | Pre-built requests package |
 | py3-cryptography | Apache-2.0 / BSD | Pre-built cryptography package |
@@ -94,7 +98,7 @@ This document provides a complete inventory of all software components used in t
 
 | License | Components |
 |---------|------------|
-| MIT | Main application, libffi, musl, pytest, pytest-cov, pytest-asyncio |
+| MIT | Main application, libffi, musl, pytest, pytest-cov |
 | Apache-2.0 | requests, acme, josepy, openssl, Home Assistant base |
 | BSD-3-Clause | cryptography (dual-licensed) |
 | PSF-2.0 | Python |
@@ -103,34 +107,35 @@ This document provides a complete inventory of all software components used in t
 ## Security Considerations
 
 - All dependencies are from trusted sources (PyPI, Alpine packages, Home Assistant registry)
-- No known vulnerabilities at time of release
+- Review the current `pip_audit.json` and container scan for release-time
+  vulnerability status; dependency versions and advisories change over time.
 - Credentials are stored in Home Assistant add-on configuration (encrypted)
 - HTTPS used for all external communications
 
 ## Dependency Graph
 
 ```
-One.com DynDNS Updater (1.5.7)
-├── Python 3.11
-│   └── Alpine Linux 3.18
+One.com DynDNS Updater (1.5.8)
+├── Python 3 (Alpine package)
+│   └── Alpine Linux 3.24
 │       ├── openssl
 │       ├── libffi
 │       └── musl
-├── requests (>=2.32.0)
+├── requests (>=2.34.2)
 │   ├── urllib3
 │   ├── certifi
 │   └── charset-normalizer
-├── acme (>=3.0.1; SBOM: 5.6.0)
-│   ├── josepy (>=2.0.0; SBOM: 2.0.0)
-│   ├── cryptography (>=50.0.0)
+├── acme (>=5.9.0)
+│   ├── josepy (>=2.2.0)
+│   ├── cryptography (>=50.0.2)
 │   │   └── cffi
 │   └── requests
 └── Home Assistant Supervisor API
 ```
 
-## SBOM Format
+## sbom Format
 
-This SBOM is also available in machine-readable CycloneDX JSON format: `sbom.json`
+This sbom is also available in machine-readable CycloneDX JSON format: `sbom.json`
 
 ## Contact
 

@@ -1,16 +1,16 @@
 # One.com DynDNS Updater Dependencies
-requests>=2.32.0
+requests>=2.34.2
 
 # SSL/ACME Dependencies
-acme>=3.0.1
-josepy>=2.0.0
-cryptography>=50.0.0
+acme>=5.9.0
+josepy>=2.2.0
+cryptography>=50.0.2
 
 # Testing Dependencies (dev only)
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.0.0
-responses>=0.22.0
+pytest>=9.2.0
+pytest-asyncio>=1.4.1.post1
+pytest-cov>=7.1.0
+responses>=0.26.3
 
 # Optional: HA integration tests (test_config_flow.py, test_init.py)
 # Installs the full Home Assistant Core + pytest-socket; on Windows

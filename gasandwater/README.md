@@ -216,7 +216,7 @@ npm run build
 
 ## License
 
-MIT License. See [FOSS.md](FOSS.md) for third-party licenses.
+MIT License. See [foss.md](foss.md) for third-party licenses.
 
 ## Native dependencies
 

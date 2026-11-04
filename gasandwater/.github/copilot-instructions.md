@@ -130,8 +130,8 @@ All code must pass ruff checks (0 errors).
 - `gas-water-meter/config.yaml` (add-on version)
 - `CHANGELOG.md` (both root and gas-water-meter/)
 - `.cursorrules` (if architecture changes)
-- `SBOM.json` / `SBOM.md` (if dependencies change)
-- `FOSS.md` (if adding open source libs)
+- `sbom.json` / `sbom.md` (if dependencies change)
+- `foss.md` (if adding open source libs)
 - `.github/copilot-instructions.md` (if project rules change)
 
 ### 10. Testing Patterns
@@ -269,8 +269,8 @@ SensorEntityDescription(
 
 ### When adding a dependency:
 1. Add to `manifest.json` `requirements` field
-2. Update `SBOM.json` and `SBOM.md`
-3. Update `FOSS.md` with license info
+2. Update `sbom.json` and `sbom.md`
+3. Update `foss.md` with license info
 4. Regenerate `requirements_test.txt` if needed
 5. Update `gas-water-meter/Dockerfile` if system library needed
 
@@ -372,15 +372,15 @@ async def test_async_load():
 
 ## Quality Checklist Template
 
-After each significant change, verify:
+After meaningful changes, run the repository-wide [quality gate](../../.github/skills/quality-gate/SKILL.md), then apply these Gas & Water Meter-specific checks as applicable:
 
-- [ ] All tests pass (`pytest tests/ -q`)
-- [ ] Ruff checks pass (`ruff check gas-water-meter/custom_components/ tests/`)
-- [ ] Ruff format applied (`ruff format gas-water-meter/custom_components/ tests/`)
+- [ ] Relevant tests pass (`pytest tests/ -q`)
+- [ ] Ruff checks pass (`python -m ruff check custom_components/ tests/`)
+- [ ] Ruff format check passes (`python -m ruff format --check custom_components/ tests/`)
 - [ ] New code has unit tests
 - [ ] Translations added (strings.json + de.json + en.json)
-- [ ] Version updated (manifest.json, config.yaml, CHANGELOG.md)
-- [ ] Dependencies documented (SBOM.json, FOSS.md if changed)
+- [ ] Dependencies documented (sbom.json, foss.md) when dependencies change
+- [ ] Release versions and CHANGELOG updated when preparing a release
 - [ ] .cursorrules still accurate
 - [ ] No hardcoded English strings (use `translation_key`)
 - [ ] All async operations properly awaited

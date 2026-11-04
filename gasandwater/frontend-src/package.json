@@ -1,6 +1,6 @@
 {
   "name": "gas-water-meter-panel",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,22 +10,22 @@
     "test:watch": "web-test-runner --watch"
   },
   "devDependencies": {
-    "@open-wc/testing": "^4.0.0",
-    "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^1.0.0",
+    "@open-wc/testing": "^5.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.2",
     "@web/test-runner": "^1.0.0",
-    "@web/test-runner-commands": "^0.9.0",
-    "rollup": "^4.59.0"
+    "@web/test-runner-commands": "^1.0.1",
+    "rollup": "^4.67.5"
   },
   "overrides": {
     "koa": "^2.16.4",
-    "nanoid": "^3.3.18",
-    "picomatch": "^4.0.4",
-    "qs": "^6.15.2",
-    "ws": "^8.21.0"
+    "nanoid": "^3.3.20",
+    "picomatch": "^4.0.7",
+    "qs": "^6.17.1",
+    "ws": "^8.22.1"
   },
   "dependencies": {
-    "chart.js": "^4.4.0",
-    "lit": "^3.2.0"
+    "chart.js": "^4.6.1",
+    "lit": "^3.3.3"
   }
 }

@@ -424,7 +424,9 @@ Tracked in:
 
 Use SemVer (MAJOR.MINOR.PATCH). Update `CHANGELOG.md` on releases.
 
-## Release Checklist
+## Quality Gate and Release Checklist
+
+For post-change validation, apply the repository-wide [quality gate](../../../../.github/skills/quality-gate/SKILL.md). The following project-specific checklist covers release readiness.
 
 Before publishing a new release, verify all of the following:
 
@@ -433,7 +435,7 @@ Before publishing a new release, verify all of the following:
 - [ ] `CHANGELOG.md` updated for the new version with Added, Fixed, Changed, and Breaking sections as needed
 - [ ] Required translations updated in `strings.json`, `translations/en.json`, and `translations/de.json`
 - [ ] New or changed sensor names use `translation_key` and no hardcoded English labels remain in Python entities
-- [ ] Any new dependency added to `manifest.json` is also documented in `SBOM.json`, `SBOM.md`, and `FOSS.md` if required
+- [ ] Any new dependency added to `manifest.json` is also documented in `sbom.json`, `sbom.md`, and `foss.md` if required
 - [ ] Home Assistant config and metadata still align with the add-on and custom component definitions
 
 ### Code & Quality Gates

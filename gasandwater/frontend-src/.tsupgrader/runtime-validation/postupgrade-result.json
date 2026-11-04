@@ -1,0 +1,120 @@
+{
+  "planHash": "09e213cbbe283c1a9ecea1995a9568c570ba8298b1a1a3c2553663d56868bd6e",
+  "phase": "postupgrade",
+  "recordedAtUtc": "2026-11-04T20:33:49.4254069Z",
+  "retryCount": 0,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 107456,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "npm warn Unknown env config \u0022scripts-prepend-node-path\u0022. This will stop working in the next major version of npm. See \u0060npm help npmrc\u0060 for supported config options.\r\n\r\n\u003E gas-water-meter-panel@0.1.9 test\r\n\u003E web-test-runner\r\n\r\n\r\nChrome: |\u001B[90m\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u001B[39m| 0/1 test files | \u001B[32m0 passed\u001B[39m, 0 failed\r\n\r\n\u001B[1mRunning tests...\u001B[22m\r\n\r\n\u001B[1mRunning 1 test files...\r\n\u001B[22m\r\n\r\n\u001B[2K\u001B[1A\u001B[2K\u001B[G\u001B[1m\u001B[36mtest\\gas-water-meter-panel.test.js\u001B[39m\u001B[22m:\r\n\r\n \uD83D\uDEA7 Browser logs:\r\n      Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.\r\n\r\n \uD83D\uDEA7 404 network requests:\r\n    \u001B[1m\u001B[90m-\u001B[39m\u001B[22m gas_water_meter_media/test_entry_1/20250201_100000.jpg\r\n    \u001B[1m\u001B[90m-\u001B[39m\u001B[22m local/gas_water_meter_media\r\n\r\nChrome: |\u001B[37m\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u001B[39m| 1/1 test files | \u001B[32m72 passed\u001B[39m, 0 failed\r\n\r\n\u001B[1mFinished running tests in 4.6s, all tests passed! \uD83C\uDF89\u001B[22m\r\n\r\n\r\n",
+        "durationMs": 8313,
+        "testResults": {
+          "testFramework": "unknown",
+          "runnerDetectedFrom": "none",
+          "testsTotal": 0,
+          "testsPassed": 0,
+          "testsFailed": 0,
+          "testsSkipped": 0,
+          "parseFailed": true
+        }
+      },
+      {
+        "name": "build-succeeds",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "npm warn Unknown env config \u0022scripts-prepend-node-path\u0022. This will stop working in the next major version of npm. See \u0060npm help npmrc\u0060 for supported config options.\r\n\r\n\u003E gas-water-meter-panel@0.1.9 build\r\n\u003E rollup -c\r\n\r\n\u001B[36m\r\n\u001B[1msrc/gas-water-meter-panel.js\u001B[22m \u2192 \u001B[1m../gas-water-meter/custom_components/gas_water_meter/frontend/entrypoint.js\u001B[22m...\u001B[39m\r\n\u001B[32mcreated \u001B[1m../gas-water-meter/custom_components/gas_water_meter/frontend/entrypoint.js\u001B[22m in \u001B[1m3.8s\u001B[22m\u001B[39m\r\n",
+        "durationMs": 5727
+      }
+    ],
+    "executions": [
+      {
+        "source": "setup[0]",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "args": [
+          "ci"
+        ],
+        "cwd": "H:\\sources\\homeassistant-addons\\gasandwater\\frontend-src",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32",
+        "nodeExecutable": "C:\\nvm4w\\nodejs\\node.EXE",
+        "nodeVersion": "v22.22.0",
+        "packageManager": "npm",
+        "packageManagerExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "packageManagerVersion": "11.17.0",
+        "cleanup": {
+          "RootProcessId": 34428,
+          "Completed": true,
+          "ProcessesObserved": 3,
+          "ProcessesTerminated": 1,
+          "Failure": null
+        }
+      },
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "args": [
+          "test"
+        ],
+        "cwd": "H:\\sources\\homeassistant-addons\\gasandwater\\frontend-src",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32",
+        "nodeExecutable": "C:\\nvm4w\\nodejs\\node.EXE",
+        "nodeVersion": "v22.22.0",
+        "packageManager": "npm",
+        "packageManagerExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "packageManagerVersion": "11.17.0",
+        "cleanup": {
+          "RootProcessId": 53068,
+          "Completed": true,
+          "ProcessesObserved": 18,
+          "ProcessesTerminated": 1,
+          "Failure": null
+        }
+      },
+      {
+        "source": "build-succeeds",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "H:\\sources\\homeassistant-addons\\gasandwater\\frontend-src",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32",
+        "nodeExecutable": "C:\\nvm4w\\nodejs\\node.EXE",
+        "nodeVersion": "v22.22.0",
+        "packageManager": "npm",
+        "packageManagerExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
+        "packageManagerVersion": "11.17.0",
+        "cleanup": {
+          "RootProcessId": 52884,
+          "Completed": true,
+          "ProcessesObserved": 7,
+          "ProcessesTerminated": 1,
+          "Failure": null
+        }
+      }
+    ]
+  }
+}

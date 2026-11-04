@@ -1,6 +1,7 @@
 # Project Guidance
 
-- Before significant changes, consult `.github/skills/project-overview/SKILL.md` and apply `.github/skills/quality-checklist/SKILL.md` afterward.
+- Before significant changes, consult `.github/skills/project-overview/SKILL.md` and apply the repository-wide `../.github/skills/quality-gate/SKILL.md` afterward.
+- Before a release, apply `.github/skills/quality-checklist/SKILL.md` for One.com versioning and release-specific checks.
 - For Python source, follow `.github/skills/python-standards/SKILL.md` and `.github/skills/security/SKILL.md`.
 - For tests, follow `.github/skills/testing/SKILL.md`.
 - For Home Assistant integration changes, follow `.github/skills/ha-integration/SKILL.md`.

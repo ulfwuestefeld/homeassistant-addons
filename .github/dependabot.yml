@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/onecomdyndns"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "pip"
+    directory: "/gasandwater"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/gasandwater/frontend-src"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -1,9 +1,20 @@
-pytest>=8.0.0
-pytest-asyncio>=0.23.0
-pytest-cov>=6.0.0
-pytest-timeout>=2.3.0
-pytest-homeassistant-custom-component>=0.13.0
-pytesseract>=0.3.10
-aiosqlite>=0.20.0
-pillow-heif>=0.18.0
-ruff>=0.9.0
+# The HA test package pins its pytest stack and only supports newer Python
+# versions in newer releases. Keep each CI runtime on its newest compatible set.
+pytest==8.3.4; python_version < "3.13"
+pytest==9.0.0; python_version >= "3.13" and python_version < "3.14"
+pytest==9.0.3; python_version >= "3.14"
+pytest-asyncio==0.24.0; python_version < "3.13"
+pytest-asyncio==1.3.0; python_version >= "3.13" and python_version < "3.14"
+pytest-asyncio==1.4.0; python_version >= "3.14"
+pytest-cov==6.0.0; python_version < "3.13"
+pytest-cov==7.0.0; python_version >= "3.13" and python_version < "3.14"
+pytest-cov==7.1.0; python_version >= "3.14"
+pytest-timeout==2.3.1; python_version < "3.13"
+pytest-timeout==2.4.0; python_version >= "3.13"
+pytest-homeassistant-custom-component==0.13.205; python_version < "3.13"
+pytest-homeassistant-custom-component==0.13.316; python_version >= "3.13" and python_version < "3.14"
+pytest-homeassistant-custom-component==0.13.375; python_version >= "3.14"
+pytesseract>=0.3.13
+aiosqlite>=0.22.1
+pillow-heif>=0.22.0
+ruff>=0.17.3

@@ -8,6 +8,6 @@
     "integration_type": "service",
     "iot_class": "calculated",
     "issue_tracker": "https://github.com/ulfwuestefeld/homeassistant-addons/issues",
-    "requirements": ["pytesseract>=0.3.10", "aiosqlite>=0.20.0", "pillow-heif>=0.18.0"],
-    "version": "0.4.3"
+    "requirements": ["pytesseract>=0.3.13", "aiosqlite>=0.22.1", "pillow-heif>=0.22.0"],
+    "version": "0.4.4"
 }
