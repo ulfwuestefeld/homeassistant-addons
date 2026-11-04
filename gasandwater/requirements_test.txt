@@ -1,6 +1,6 @@
 # The HA test package pins its pytest stack and only supports newer Python
 # versions in newer releases. Keep each CI runtime on its newest compatible set.
-pytest==8.3.4; python_version < "3.13"
+pytest==9.2.0; python_version < "3.13"
 pytest==9.0.0; python_version >= "3.13" and python_version < "3.14"
 pytest==9.0.3; python_version >= "3.14"
 pytest-asyncio==0.24.0; python_version < "3.13"
