@@ -15,7 +15,7 @@
     "@rollup/plugin-terser": "^1.0.2",
     "@web/test-runner": "^1.0.0",
     "@web/test-runner-commands": "^1.0.1",
-    "rollup": "^4.67.5"
+    "rollup": "^4.68.0"
   },
   "overrides": {
     "koa": "^2.16.4",
