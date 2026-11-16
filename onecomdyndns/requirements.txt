@@ -3,7 +3,7 @@ requests>=2.34.2
 
 # SSL/ACME Dependencies
 acme>=5.9.0
-josepy>=2.2.0
+josepy>=2.3.0
 cryptography>=50.0.2
 
 # Testing Dependencies (dev only)
